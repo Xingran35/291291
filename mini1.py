@@ -62,6 +62,7 @@ def read_file(file_path):
     return conn
 
 def print_row(command, description):
+    # print each row of the command
     print(" %-15s %-15s" % (command, description))
     
 def print_commands(all_commands):
@@ -75,6 +76,7 @@ def print_commands(all_commands):
 
 
 def print_invalid(name):
+    # print the input is invaliad
     print('\n******Invalid ' + name +' *******\n')
 
 
@@ -106,68 +108,49 @@ def handle_command(current_command, all_commands, cursor, user):
     user_city = user[5]
     if current_command == 'RAB':
         succ = do_RAB(cursor, user_city, user_type)
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
+        print_succ(succ)
         
     elif current_command == 'RAM':
         succ = do_RAM(cursor, user_city, user_type)
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
+        print_succ(succ)
         
     elif current_command == 'RAR':
         succ = do_RAR(cursor, user_city, user_type)
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
+        print_succ(succ)
         
     elif current_command == 'PAB':
         succ = do_PAB(cursor, user_city, user_type)
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
+        print_succ(succ)
         
     elif current_command == 'PAP':
         succ = do_PAP(cursor, user_city, user_type)
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
+        print_succ(succ)
         
     elif current_command == 'GAD':
         succ = do_GAD(cursor, user_city, user_type)
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
+        print_succ(succ)
                 
     elif current_command == 'IAT':
         succ = do_IAT() # succed or not
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
+        print_succ(succ)
                  
     elif current_command == 'FAC':
         succ = do_FAC()
-        if succ:
-            print('****** Command Executed Successfully! ******')
-        else:
-            print('****** Command did not Executed Successfully ******')    
-                
+        print_succ(succ)
         
     else:
         print('\n******Wrong Command!!!****** \n')
         print_commands(all_commands)
 
 
+def print_succ(succ):
+    # Print the command excuted result
+    if succ:
+        print('****** Command Executed Successfully! ******')
+    else:
+        print('****** Command did not Executed Successfully ******')    
 
-
+        
 def do_RAB(cursor, user_city, user_type):
     # This function perform the operation for Register a birth
     if not check_user_agent(user_type):
@@ -299,6 +282,7 @@ def do_PAB(cursor, user_city, user_type):
 
 
 def do_PAP(cursor, user_city, user_type):
+    # This function process a payment
     if not check_user_agent(user_type):
         return False
     today = date.today()
@@ -335,6 +319,7 @@ def do_PAP(cursor, user_city, user_type):
         
         
 def do_GAD(cursor, user_city, user_type):
+    # This function gets a driver's information
     if not check_user_agent(user_type):
         return False
     fname = get_input_string('First Name of the Driver', 12, isname = True)
@@ -401,6 +386,7 @@ def do_FAC():
     
 
 def get_driver_tickets(cursor, fname, lname, is_2_years = False):
+    # this function returns the tickets that the driver got
     if is_2_years:
         tickets = cursor.execute('''select t.tno, t.vdate, t.violation, t.fine, t.regno, v.make, v.model
                                  from tickets t, registrations r, vehicles v
@@ -425,6 +411,7 @@ def get_driver_tickets(cursor, fname, lname, is_2_years = False):
         
 
 def get_driver_demerit(cursor, fname, lname, is_2_years = False):
+    # this function returns the dermirt notice that the driver get
     if is_2_years:
         demerits= cursor.execute('''select *
                              from demeritNotices
