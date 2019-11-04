@@ -324,6 +324,11 @@ def do_GAD(cursor, user_city, user_type):
         return False
     fname = get_input_string('First Name of the Driver', 12, isname = True)
     lname = get_input_string('Last Name of the Driver', 12, isname = True)
+    
+    exist_result = check_exist(cursor, 'registrations', 'fname', 'lname', fname, lname)
+    if not exist_result:
+        print('\n****** Warning! The Driver does not Exist in the Registation Table ! ******') 
+        return False
     tickets_2_years = get_driver_tickets(cursor, fname, lname, is_2_years = True)
     tickets_life_time = get_driver_tickets(cursor, fname, lname)
 
@@ -551,6 +556,7 @@ def reg_new_person(cursor, fname, lname, data = False):
             else:
                 return False
 
+    
 
 def exit_script(num):
     # Exit the script 
