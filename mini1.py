@@ -131,11 +131,11 @@ def handle_command(current_command, all_commands, cursor, user):
         print_succ(succ)
                 
     elif current_command == 'IAT':
-        succ = do_IAT() # succed or not
+        succ = do_IAT(cursor, user_city, user_type) # succed or not
         print_succ(succ)
                  
     elif current_command == 'FAC':
-        succ = do_FAC()
+        succ = do_FAC(cursor, user_city, user_type)
         print_succ(succ)
         
     else:
@@ -373,18 +373,149 @@ def do_GAD(cursor, user_city, user_type):
     return True
     
 
-def do_IAT():
+def do_IAT(cursor, user_city, user_type):
     # Issue a ticket.
     #check_user_officer(user_type)
+    if not check_user_officer(user_type):
+        return False
+    
+    regno =input("Enter The Registration Number: \n")
+    try:
+        regno = int(regno)
+    except:
+        print('\n****** Warning! Only Integer Numbers are Allowed Here ! ******')
+        return False
 
-    pass
+    result = cursor.execute('''SELECT r.fname, r.lname, v.make, v.model, v.year, v.color 
+                               FROM registrations r, vehicles v 
+                               WHERE r.vin = v.vin and r.regno = ?  COLLATE NOCASE;''',(regno,))
+    result = result.fetchall()
+    if len(result) == 0:
+        print('\n****** Warning! No Matching Record Found ! ******')
+        return False
+    else:
+        print(result[0])
+    
+
+    violation_date = get_input_string('violation date', 0, isdate = True, isrequired = False)
+    if violation_date == None:
+        today = date.today()
+        violation_date =  today.strftime('%Y-%m-%d')
+    violation_text = get_input_string('violation text', 12, isaddress = True)
+    amount =input("Enter the Amount of Your Payment: ")
+    try:
+        amount = int(amount)
+    except:
+        print('\n****** Warning! Only Integer Numbers are Allowed Here ! ******')
+        return False
+    
+    tno = get_unique_id(cursor, 'tickets', 'tno')
+    ticket_data = (tno, regno, amount, violation_text, violation_date)
+
+    cursor.execute("insert into tickets values (?, ?, ?, ?, ?) ;",ticket_data)
+    print('\n****** Successfully issue a ticket to ticket Table ! ******\n')
+
+    return True
+
+
+
             
 
 
 
-def do_FAC():
+def do_FAC(cursor,user_city,user_type):
     # Find a car owner
-    pass
+    if not check_user_officer(user_type):
+        return False
+    
+    #one or more of make, model, year, color, and plate. 
+    make = get_input_string('Make of the car', 12, isaddress = True, isrequired = False)
+    model= get_input_string('Model of the car', 7, isaddress = True, isrequired = False)
+    color= get_input_string('Color of the car', 12, isaddress = True,isrequired = False)
+    plate = get_input_string('plate', 7, isaddress = True,isrequired = False)
+    
+    result = cursor.execute('''SELECT distinct r.vin
+                               FROM registrations r, vehicles v 
+                               WHERE r.vin = v.vin 
+                               GROUP BY r.vin
+                               HAVING (v.make = ? COLLATE NOCASE and v.model = ? COLLATE NOCASE and v.color = ? COLLATE NOCASE and r.plate = ? COLLATE NOCASE) or ('1' == '1');''',(make,model,color,plate,))
+                               
+    result = result.fetchall()
+    #print(result)
+    length = len(result)
+    new_list = []
+    #print(result)
+    if length > 4:
+        for i in range(length):
+            vin_need = result[i][0]
+            single_result = cursor.execute('''SELECT v.make, v.model, v.year, v.color, r.plate, v.vin
+                               FROM registrations r, vehicles v 
+                               WHERE r.vin = v.vin and r.vin = ? ;''',(vin_need,))
+            single_result = single_result.fetchall()
+            for k in range(len(single_result)):
+                print(single_result[k])
+                new_list.append((single_result[k]))
+    
+        # select one result and print the selected car information
+        index  = int(input("***Choose one of the vehicle above by row number (>4 case) :"))
+        for j in range(5):
+            print(new_list[index-1][j])
+
+        printed_reg_info = check_recent_registration(cursor,new_list[index-1][5]) 
+        print("The latest registration date is :")
+        print(printed_reg_info[0][1])
+        print("The expiry date is :")
+        print(printed_reg_info[0][2])
+        print("The name of its owner is :")
+        print(printed_reg_info[0][5], printed_reg_info[0][6])
+        
+    elif length==0:
+        print("no such car")
+        return False
+    else:
+        print("less than 4")
+        for i in range(length):
+            vin_need = result[i][0]
+            single_result = cursor.execute('''SELECT v.make, v.model, v.year, v.color, r.plate, v.vin
+                               FROM registrations r, vehicles v 
+                               WHERE r.vin = v.vin and r.vin = ? ;''',(vin_need,))
+            single_result = single_result.fetchall()
+            for k in range(len(single_result)):
+                print(single_result[k])
+                new_list.append((single_result[k]))
+        
+
+        #print all the car informaiton
+        for i in range(len(new_list)):
+            print("********************This is the result",i+1)
+            print(new_list[i])
+            printed_reg_info = check_recent_registration(cursor,new_list[i][5]) 
+            print("The latest registration date is :")
+            print(printed_reg_info[0][1])
+            print("The expiry date is :")
+            print(printed_reg_info[0][2])
+            print("The name of its owner is :")
+            print(printed_reg_info[0][5], printed_reg_info[0][6])
+            print("\n")
+
+
+        
+
+
+
+#for each match, the make, model, year, color, and the plate of the matching car will be shown as well as the latest registration date, the expiry date, and the name of the person listed in the latest registration record.
+    
+
+
+        
+
+           
+
+    
+    
+
+
+    return True
 
 
     
@@ -521,6 +652,15 @@ def check_onwer(cursor,current_fname, current_lname, vin):
         return result[0]
     else:
         return False
+
+def check_recent_registration(cursor,vin):
+    result = cursor.execute("select * from registrations where vin = ? COLLATE NOCASE order by regdate desc;",(vin, ))
+    result = result.fetchall()
+    if len(result) == 0:
+        return None
+    else:
+        return result
+
     
     
     
