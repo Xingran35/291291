@@ -419,7 +419,11 @@ def do_IAT(cursor, user_city, user_type):
 
 
 
-            
+def change_empty_to_true(input_string):
+    # This function replace the input string to be None if it's empty
+    # if the input string is empty, otherwise return the oringin string
+    if input_string == None:
+        return '1 or 1 == 1' # it will become where (a = 1 or '1'=='1')         
 
 
 
@@ -431,18 +435,28 @@ def do_FAC(cursor,user_city,user_type):
     #one or more of make, model, year, color, and plate. 
     make = get_input_string('Make of the car', 12, isaddress = True, isrequired = False)
     model= get_input_string('Model of the car', 7, isaddress = True, isrequired = False)
+    year = get_input_string('Year of the car', 4, isaddress = True,isrequired = False)
     color= get_input_string('Color of the car', 12, isaddress = True,isrequired = False)
     plate = get_input_string('plate', 7, isaddress = True,isrequired = False)
     
-    result = cursor.execute('''SELECT distinct r.vin
-                               FROM registrations r, vehicles v 
-                               WHERE r.vin = v.vin 
-                               GROUP BY r.vin
-                               HAVING (v.make = ? COLLATE NOCASE and v.model = ? COLLATE NOCASE and v.color = ? COLLATE NOCASE and r.plate = ? COLLATE NOCASE) or ('1' == '1');''',(make,model,color,plate,))
-                               
+    make = change_empty_to_true(make)
+    model = change_empty_to_true(model)
+    year = change_empty_to_true(year)
+    color = change_empty_to_true(color)
+    plate = change_empty_to_true(plate)
+
+
+    data = (make, model, year, color, plate)
+    result = cursor.execute('''select * from registrations r outer join vehicles v on r.vin = v.vin 
+    where (v.make = ? COLLATE NOCASE) and (v.model = ? COLLATE NOCASE) and (v.year = ? COLLATE NOCASE) 
+    and (v.color = ? COLLATE NOCASE) and (r.plate = ? COLLATE NOCASE)''', data)
+
     result = result.fetchall()
-    #print(result)
+    print(result)
     length = len(result)
+
+
+
     new_list = []
     #print(result)
     if length > 4:
